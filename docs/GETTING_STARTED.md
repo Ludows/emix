@@ -7,11 +7,11 @@ Emix is an **event-driven state management library** for React. It uses **Proxie
 ### Via npm / yarn / pnpm
 
 ```bash
-npm install emix
+npm install @ludoows/emix
 # or
-yarn add emix
+yarn add @ludoows/emix
 # or
-pnpm add emix
+pnpm add @ludoows/emix
 ```
 
 ### Via CDN (ESM)
@@ -32,7 +32,7 @@ Emix is available on [jsDelivr](https://www.jsdelivr.com/) and [unpkg](https://u
 
 <!-- Emix core -->
 <script type="module">
-  import { createSlice, createStore } from "https://cdn.jsdelivr.net/npm/emix/dist/index.js";
+  import { createSlice, createStore } from "https://cdn.jsdelivr.net/npm/@ludoows/emix/dist/index.js";
 
   const counter = createSlice({ count: 0 });
 
@@ -50,10 +50,10 @@ Emix is available on [jsDelivr](https://www.jsdelivr.com/) and [unpkg](https://u
 ```html
 <script type="module">
   // Hooks (requires React)
-  import { useSnapshot } from "https://cdn.jsdelivr.net/npm/emix/dist/hooks.js";
+  import { useSnapshot } from "https://cdn.jsdelivr.net/npm/@ludoows/emix/dist/hooks.js";
 
   // Devtools
-  import { EmixDevtools } from "https://cdn.jsdelivr.net/npm/emix/dist/devtools.js";
+  import { EmixDevtools } from "https://cdn.jsdelivr.net/npm/@ludoows/emix/dist/devtools.js";
 </script>
 ```
 

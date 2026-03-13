@@ -16,7 +16,7 @@ Emix is a lightweight, predictable state management library that combines the be
 ### npm / yarn / pnpm
 
 ```bash
-npm install emix
+npm install @ludoows/emix
 ```
 
 ### CDN
@@ -33,7 +33,7 @@ npm install emix
 </script>
 
 <script type="module">
-  import { createSlice } from "https://cdn.jsdelivr.net/npm/emix/dist/index.js";
+  import { createSlice } from "https://cdn.jsdelivr.net/npm/@ludoows/emix/dist/index.js";
 </script>
 ```
 
