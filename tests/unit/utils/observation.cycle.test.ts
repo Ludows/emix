@@ -6,7 +6,8 @@ import { pipe } from "../../../src/utils/observation";
 // Each test creates fresh slices so the sets never carry cross-test pollution.
 
 describe("observation – cycle detection in pipe()", () => {
-  let warnSpy: ReturnType<typeof vi.spyOn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let warnSpy: any;
 
   beforeEach(() => {
     warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -54,8 +55,8 @@ describe("observation – cycle detection in pipe()", () => {
 
     // At least one cycle-detection warning must have been emitted.
     expect(warnSpy).toHaveBeenCalled();
-    const calls = warnSpy.mock.calls.map((c) => String(c[0]));
-    expect(calls.some((msg) => msg.includes("[emix]") && msg.includes("cycle"))).toBe(true);
+    const calls = warnSpy.mock.calls.map((c: unknown[]) => String(c[0]));
+    expect(calls.some((msg: string) => msg.includes("[emix]") && msg.includes("cycle"))).toBe(true);
   });
 
   it("propagates the first mutation even though the cycle is broken", async () => {

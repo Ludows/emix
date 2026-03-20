@@ -14,7 +14,7 @@ export async function validatedEmit<TState, TEvent extends string>(
   const result = validator(clone);
 
   if (result === true) {
-    await slice.emit(event, mutator);
+    await slice.emit(event, mutator as any);
     return { success: true, state: slice.getState() };
   }
 

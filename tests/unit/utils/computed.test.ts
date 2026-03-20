@@ -30,7 +30,7 @@ describe("computed utility", () => {
     const derived = computed([a], (sa) => sa.x * 2);
     const handler = vi.fn();
 
-    derived.on(undefined as any, handler);
+    (derived as any).on(undefined, handler);
 
     await a.emit("set" as any, (d: any) => {
       d.x = 5;
@@ -51,7 +51,7 @@ describe("computed utility", () => {
       { equals: (prev, next) => prev === next },
     );
 
-    lengthSlice.on(undefined as any, handler);
+    (lengthSlice as any).on(undefined, handler);
 
     // Mutate items but keep the same length
     await a.emit("swap" as any, (d: any) => {
@@ -73,7 +73,7 @@ describe("computed utility", () => {
       { equals: (prev, next) => prev === next },
     );
 
-    lengthSlice.on(undefined as any, handler);
+    (lengthSlice as any).on(undefined, handler);
 
     await a.emit("push" as any, (d: any) => {
       d.items = [1, 2, 3, 4];
@@ -87,7 +87,7 @@ describe("computed utility", () => {
     const a = createSlice({ x: 1 });
     const derived = computed([a], (sa) => sa.x);
 
-    expect(() => derived.emit(undefined as any, () => {})).toThrow(
+    expect(() => (derived as any).emit(undefined, () => {})).toThrow(
       "[emix] computed: computed slices are read-only and cannot emit events.",
     );
   });

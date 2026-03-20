@@ -41,6 +41,12 @@ export function createDerivedSlice<TSelected>(
       });
       return unsub;
     },
+    reset() {
+      throw new Error("Derived slices are read-only and cannot be reset");
+    },
+    offAll(_event?: string) {
+      // no-op: derived slices manage no listeners of their own
+    },
     _isDerived: true,
   };
 }
