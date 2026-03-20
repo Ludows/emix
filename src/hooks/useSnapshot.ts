@@ -1,5 +1,5 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
-import type { Slice, SnapshotOptions, StateDiff } from "../types";
+import type { EventContext, Slice, SnapshotOptions, StateDiff } from "../types";
 
 function shallowEqual<T>(a: T, b: T): boolean {
   if (Object.is(a, b)) return true;
@@ -24,11 +24,38 @@ function shallowEqual<T>(a: T, b: T): boolean {
   return true;
 }
 
+/**
+ * Subscribe to all events on a slice without a type-unsafe `undefined as any`
+ * scattered across hooks. The cast is intentional: `Slice.on` requires a typed
+ * event key, but passing `undefined` to the underlying EventBus is the supported
+ * mechanism for subscribing to every event. This is the single place that cast lives.
+ */
+function subscribeToAll<TState, TEvents extends string>(
+  slice: Slice<TState, TEvents>,
+  handler: (
+    prev: TState,
+    next: TState,
+    diffs: StateDiff[],
+    ctx: EventContext<TState>,
+  ) => void,
+): () => void {
+  return (slice as any).on(undefined, handler);
+}
+
 export function useSnapshot<TState, TSelected, TEvents extends string>(
   slice: Slice<TState, TEvents>,
   selector: (state: TState) => TSelected,
   options?: SnapshotOptions<TEvents>,
 ): TSelected {
+  // Validate unsupported options eagerly so callers get a clear error instead
+  // of silently receiving unfiltered data.
+  if (options?.only !== undefined || options?.exclude !== undefined) {
+    throw new Error(
+      "[emix] useSnapshot: 'only' and 'exclude' options are not yet supported. " +
+        "Subscribe to specific events manually using slice.on().",
+    );
+  }
+
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
@@ -40,16 +67,9 @@ export function useSnapshot<TState, TSelected, TEvents extends string>(
 
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      return slice.on(
-        undefined as any,
-        (prev: any, next: any, diffs: StateDiff[]) => {
-          const opts = optionsRef.current;
-
-          // If there's an event scope, we'd need event context here.
-          // But currently slice.on `prev, next, diffs` doesn't pass the event name.
-          // To fully support `only` and `exclude`, the bus needs to pass the event name.
-          // Assuming for now re-render optimization with selectors:
-
+      return subscribeToAll(
+        slice,
+        (_prev: TState, next: TState, _diffs: StateDiff[]) => {
           const newSelection = selectorRef.current(next);
           if (!equals(selectionRef.current, newSelection)) {
             selectionRef.current = newSelection;

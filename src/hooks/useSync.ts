@@ -1,6 +1,19 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
 import type { Slice } from "../types";
 
+/**
+ * Subscribe to all events on a slice without a type-unsafe `undefined as any`
+ * scattered across hooks. The cast is intentional: `Slice.on` requires a typed
+ * event key, but passing `undefined` to the underlying EventBus is the supported
+ * mechanism for subscribing to every event. This is the single place that cast lives.
+ */
+function subscribeToAll<TState, TEvents extends string>(
+  slice: Slice<TState, TEvents>,
+  handler: () => void,
+): () => void {
+  return (slice as any).on(undefined, handler);
+}
+
 export function useSync<TSlices extends Slice<any, any>[]>(
   ...slices: TSlices
 ): {
@@ -9,7 +22,7 @@ export function useSync<TSlices extends Slice<any, any>[]>(
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
       const unsubscribes = slices.map((s) =>
-        s.on(undefined as any, onStoreChange),
+        subscribeToAll(s, onStoreChange),
       );
       return () => unsubscribes.forEach((unsub) => unsub());
     },

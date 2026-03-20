@@ -2,14 +2,12 @@ import type { StateDiff } from "../types";
 
 export interface ProxySession {
   deltas: StateDiff[];
-  accessedPaths: Set<string>;
   isArrayTransactionActive: boolean;
 }
 
 export function createProxySession(): ProxySession {
   return {
     deltas: [],
-    accessedPaths: new Set(),
     isArrayTransactionActive: false,
   };
 }
@@ -18,14 +16,19 @@ export function createProxy<T extends object>(
   target: T,
   session: ProxySession,
   path: string[] = [],
+  depth = 0,
 ): T {
+  // Hard limit: do not proxy beyond depth 10 to avoid infinite recursion on
+  // deeply nested or circular-like structures.
+  if (depth >= 10) {
+    return target;
+  }
+
   return new Proxy(target, {
     get(obj, prop) {
       if (typeof prop === "symbol") return Reflect.get(obj, prop);
       const key = String(prop);
       const value = Reflect.get(obj, key);
-
-      session.accessedPaths.add([...path, key].join("."));
 
       if (Array.isArray(obj) && typeof value === "function") {
         const arrayMethods = [
@@ -87,7 +90,7 @@ export function createProxy<T extends object>(
       }
 
       if (value !== null && typeof value === "object") {
-        return createProxy(value, session, [...path, key]);
+        return createProxy(value, session, [...path, key], depth + 1);
       }
       return value;
     },

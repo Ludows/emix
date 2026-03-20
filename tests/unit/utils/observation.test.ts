@@ -82,3 +82,30 @@ describe("Observation utilities", () => {
     expect(target.getState().result).toBe(10);
   });
 });
+
+describe("watch() – path validation", () => {
+  it("throws when path is an empty string", () => {
+    const slice = createSlice({ count: 0 });
+    expect(() => watch(slice, "", () => {})).toThrow(Error);
+  });
+
+  it("throws when path starts with a dot", () => {
+    const slice = createSlice({ count: 0 });
+    expect(() => watch(slice, ".foo", () => {})).toThrow(Error);
+  });
+
+  it("throws when path ends with a dot", () => {
+    const slice = createSlice({ count: 0 });
+    expect(() => watch(slice, "foo.", () => {})).toThrow(Error);
+  });
+
+  it("throws when path contains consecutive dots", () => {
+    const slice = createSlice({ count: 0 });
+    expect(() => watch(slice, "foo..bar", () => {})).toThrow(Error);
+  });
+
+  it("does NOT throw for a valid dotted path", () => {
+    const slice = createSlice({ foo: { bar: 0 } });
+    expect(() => watch(slice, "foo.bar", () => {})).not.toThrow();
+  });
+});

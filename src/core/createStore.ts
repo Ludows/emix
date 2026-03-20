@@ -39,7 +39,9 @@ export function createStore<TSlices extends Record<string, AnySlice>>(
       if (slice) {
         return slice.emit(sliceEvent, mutator);
       }
-      throw new Error(`Slice ${sliceName} not found for event ${event}`);
+      throw new Error(
+        `[emix] Store: slice "${sliceName}" not found. Available slices: ${Object.keys(slices).join(", ")}`,
+      );
     },
     on(event: string, handler: EventHandler<any>): Unsubscribe {
       const busHandler = (ctx: EventContext<any>) => {

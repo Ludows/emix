@@ -187,3 +187,55 @@ describe("EventBus system", () => {
     expect(count).toBe(12);
   });
 });
+
+describe("EventBus – $error event", () => {
+  // handleError() is only reached via emitSync's internal .catch() path (async
+  // middleware / listener rejection).  emitAsync propagates errors directly to
+  // the caller and never calls handleError, so these tests use emitSync.
+
+  it("delivers { event, error } to a $error listener when an async middleware rejects via emitSync", async () => {
+    const bus = new EventBus();
+    const errorPayloads: any[] = [];
+
+    // Register a $error listener so handleError routes errors here instead of
+    // falling back to console.error.
+    bus.on("$error", (payload) => {
+      errorPayloads.push(payload);
+    });
+
+    // Async middleware that rejects – this is the path that reaches handleError.
+    bus.use(async () => {
+      throw new Error("async middleware failure");
+    });
+
+    const context = { event: "boom", state: {}, draft: {}, meta: {} } as any;
+    bus.emitSync(context, () => {});
+
+    // Let the async promise chain and the fire-and-forget $error emit settle.
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(errorPayloads.length).toBeGreaterThan(0);
+    expect(errorPayloads[0]).toMatchObject({
+      event: "boom",
+      error: expect.any(Error),
+    });
+  });
+
+  it("calls console.error when no $error listener is registered and an async middleware rejects via emitSync", async () => {
+    const bus = new EventBus();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    bus.use(async () => {
+      throw new Error("middleware failure");
+    });
+
+    const context = { event: "test", state: {}, draft: {}, meta: {} } as any;
+    bus.emitSync(context, () => {});
+
+    // Let the internal microtask / promise chain resolve.
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+});

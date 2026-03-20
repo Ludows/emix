@@ -25,7 +25,14 @@ export type EventHandler<TState> = (
 
 export interface EmitResult<TState> {
   pipe: (...fns: Array<(state: TState) => void>) => EmitResult<TState>;
-  then: (fn: (state: TState) => void) => EmitResult<TState>;
+  then: (
+    onFulfilled?: ((state: TState) => any) | null,
+    onRejected?: ((reason: unknown) => any) | null,
+  ) => Promise<TState>;
+  catch: (
+    onRejected?: ((reason: unknown) => any) | null,
+  ) => Promise<TState>;
+  finally: (onFinally?: (() => void) | null) => Promise<TState>;
 }
 
 export interface EventError<TEvent extends string, TPayload = unknown> {

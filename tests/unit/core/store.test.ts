@@ -18,7 +18,7 @@ describe("Core Store functions", () => {
   it("createStore() throws if slice is not found in emit", () => {
     const store = createStore({ s1: createSlice({ a: 1 }) });
     expect(() => store.emit("invalid/event", () => {})).toThrow(
-      "Slice invalid not found",
+      '[emix] Store: slice "invalid" not found',
     );
   });
 

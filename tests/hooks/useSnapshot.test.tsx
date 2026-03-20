@@ -53,3 +53,25 @@ describe("useSnapshot()", () => {
     // but we ensure it doesn't crash.
   });
 });
+
+describe("useSnapshot() – unsupported options", () => {
+  it("throws a clear [emix] error when 'only' is provided", () => {
+    const slice = createSlice({ count: 0 });
+
+    expect(() =>
+      renderHook(() =>
+        useSnapshot(slice, (s) => s.count, { only: ["count"] } as any),
+      ),
+    ).toThrow("[emix] useSnapshot");
+  });
+
+  it("throws a clear [emix] error when 'exclude' is provided", () => {
+    const slice = createSlice({ count: 0 });
+
+    expect(() =>
+      renderHook(() =>
+        useSnapshot(slice, (s) => s.count, { exclude: ["count"] } as any),
+      ),
+    ).toThrow("[emix] useSnapshot");
+  });
+});

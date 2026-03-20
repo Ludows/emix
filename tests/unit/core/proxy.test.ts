@@ -6,19 +6,22 @@ import {
 } from "../../../src/core/proxy";
 
 describe("Proxy tracking", () => {
-  it("tracks nested property access", () => {
+  it("tracks nested mutations via deltas", () => {
     const session = createProxySession();
     const state = createProxy({ user: { name: "John" } }, session);
-    state.user.name;
-    expect(session.accessedPaths.has("user")).toBe(true);
-    expect(session.accessedPaths.has("user.name")).toBe(true);
+    state.user.name = "Jane";
+    expect(session.deltas).toEqual([
+      { path: ["user", "name"], type: "set", prev: "John", next: "Jane" },
+    ]);
   });
 
-  it("tracks deep nested property access", () => {
+  it("tracks deep nested mutations via deltas", () => {
     const session = createProxySession();
     const state = createProxy({ a: { b: { c: 1 } } }, session);
-    state.a.b.c;
-    expect(session.accessedPaths.has("a.b.c")).toBe(true);
+    state.a.b.c = 42;
+    expect(session.deltas).toEqual([
+      { path: ["a", "b", "c"], type: "set", prev: 1, next: 42 },
+    ]);
   });
 
   it("handles array push — single notification", () => {
@@ -76,13 +79,22 @@ describe("Proxy tracking", () => {
     expect(() => state.self.self).not.toThrow();
   });
 
-  it("lazy proxifies nested objects on access", () => {
+  it("stops proxifying beyond depth limit", () => {
     const session = createProxySession();
-    const raw = { a: { b: 1 } };
-    const state = createProxy(raw, session);
-    state.a;
-    expect(session.accessedPaths.has("a")).toBe(true);
-    expect(session.accessedPaths.has("a.b")).toBe(false); // not accessed yet
+    // Build an object 12 levels deep
+    const deep: any = {};
+    let cur = deep;
+    for (let i = 0; i < 12; i++) {
+      cur.child = {};
+      cur = cur.child;
+    }
+    cur.value = 99;
+    const state = createProxy(deep, session);
+    // Accessing deep levels should not throw even beyond the depth limit
+    expect(() => {
+      let node: any = state;
+      for (let i = 0; i < 12; i++) node = node.child;
+    }).not.toThrow();
   });
 
   it("does not proxify primitives", () => {

@@ -83,7 +83,17 @@ export function freeze<TState, TEvent extends string>(
       activeFreezes.delete(slice);
       const currentResolvers = Array.from(resolvers);
       resolvers.clear();
+      // Call resolvers first so in-flight dispatch(i+1) can complete,
+      // then remove the middleware on the next microtask to avoid breaking the chain index.
       currentResolvers.forEach((resolve) => resolve());
+      Promise.resolve().then(() => {
+        if (bus && Array.isArray((bus as any).middlewares)) {
+          const idx = (bus as any).middlewares.indexOf(middleware);
+          if (idx !== -1) {
+            (bus as any).middlewares.splice(idx, 1);
+          }
+        }
+      });
     },
   };
 

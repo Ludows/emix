@@ -31,6 +31,7 @@ export function createSlice<
     event: E,
     mutator: MutatorFn<TState>,
   ): EmitResult<TState> {
+    const snapshot = structuredClone(currentState);
     const session = createProxySession();
     const nextState = structuredClone(currentState);
     const draft = createProxy(nextState, session) as any;
@@ -59,9 +60,21 @@ export function createSlice<
     };
 
     const executeMutation = () => {
-      const result = mutator(draft);
+      let result: ReturnType<MutatorFn<TState>>;
+      try {
+        result = mutator(draft);
+      } catch (err) {
+        currentState = snapshot;
+        throw err;
+      }
       if (result instanceof Promise) {
-        return result.then(() => finishMutation());
+        return result.then(
+          () => finishMutation(),
+          (err) => {
+            currentState = snapshot;
+            throw err;
+          },
+        );
       }
       finishMutation();
       return Promise.resolve();
@@ -72,11 +85,14 @@ export function createSlice<
     const createResult = (
       p: Promise<any>,
     ): EmitResult<TState> & PromiseLike<TState> => {
+      const statePromise = () => p.then(() => currentState);
       const result: any = {
         pipe: (...fns: any[]) =>
           createResult(p.then(() => fns.forEach((fn) => fn(currentState)))),
         then: (onFulfilled?: any, onRejected?: any) =>
-          p.then(() => currentState).then(onFulfilled, onRejected),
+          statePromise().then(onFulfilled, onRejected),
+        catch: (onRejected?: any) => statePromise().catch(onRejected),
+        finally: (onFinally?: any) => statePromise().finally(onFinally),
       };
       return result;
     };
@@ -89,7 +105,8 @@ export function createSlice<
     handler: EventHandler<TState>,
   ): Unsubscribe {
     const busHandler = (ctx: EventContext<TState>) => {
-      handler(ctx.state, currentState, ctx.diff || [], ctx);
+      // Return the handler result so Emittery can await async handlers (e.g. pipe)
+      return handler(ctx.state, currentState, ctx.diff || [], ctx);
     };
     bus.on(event, busHandler);
     return () => bus.off(event, busHandler);
@@ -100,8 +117,9 @@ export function createSlice<
     handler: EventHandler<TState>,
   ): Unsubscribe {
     const busHandler = (ctx: EventContext<TState>) => {
-      handler(ctx.state, currentState, ctx.diff || [], ctx);
+      const result = handler(ctx.state, currentState, ctx.diff || [], ctx);
       bus.off(event, busHandler);
+      return result;
     };
     bus.on(event, busHandler);
     return () => bus.off(event, busHandler);
