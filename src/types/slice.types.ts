@@ -11,6 +11,8 @@ export interface Slice<TState = any, TEvents extends string = string> {
   ): EmitResult<TState>;
   on<E extends TEvents>(event: E, handler: EventHandler<TState>): Unsubscribe;
   once<E extends TEvents>(event: E, handler: EventHandler<TState>): Unsubscribe;
+  reset(): EmitResult<TState>;
+  offAll(event?: TEvents): void;
 }
 
 export type AnySlice = Slice<SliceState, string>;

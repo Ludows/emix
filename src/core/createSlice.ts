@@ -19,6 +19,7 @@ export function createSlice<
   _addParent: (parent: EventBus<any>, prefix: string) => void;
   _bus: EventBus<TState>;
 } {
+  const storedInitialState = structuredClone(initialState);
   let currentState = { ...initialState };
   const bus = new EventBus<TState>();
   const parentBuses = new Map<EventBus<any>, string>();
@@ -125,11 +126,25 @@ export function createSlice<
     return () => bus.off(event, busHandler);
   }
 
+  function reset(): EmitResult<TState> {
+    const initial = structuredClone(storedInitialState);
+    return emit("$reset" as TEvents, (draft: any) => {
+      Object.keys(draft).forEach((key) => delete draft[key]);
+      Object.assign(draft, initial);
+    });
+  }
+
+  function offAll(event?: TEvents): void {
+    bus.clearAll(event);
+  }
+
   return {
     getState,
     emit,
     on,
     once,
+    reset,
+    offAll,
     _bus: bus,
     _addParent(parent: EventBus<any>, prefix: string) {
       parentBuses.set(parent, prefix);

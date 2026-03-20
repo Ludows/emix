@@ -1,6 +1,6 @@
 {
   "name": "@ludoows/emix",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Event-driven state management for React — emit to mutate, Proxy to track",
   "type": "module",
   "sideEffects": false,

@@ -64,6 +64,15 @@ export class EventBus<TState> {
     }
   }
 
+  clearAll(event?: string): void {
+    if (event !== undefined) {
+      this.emitter.clearListeners(event);
+    } else {
+      this.emitter.clearListeners();
+      this.anyWrappers.clear();
+    }
+  }
+
   private async runMiddlewaresAsync(
     context: EventContext<TState>,
     mutation: () => Promise<void>,
